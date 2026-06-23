@@ -45,5 +45,7 @@ def mean_groundedness(items: list[dict], *, threshold: float = 0.5) -> float:
     """Mean groundedness over [{'answer':..., 'sources':[...]}]."""
     if not items:
         return 0.0
-    scores = [groundedness(it["answer"], it.get("sources", []), threshold=threshold) for it in items]
+    scores = [
+        groundedness(it["answer"], it.get("sources", []), threshold=threshold) for it in items
+    ]
     return sum(scores) / len(scores)

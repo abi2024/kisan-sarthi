@@ -53,7 +53,9 @@ def _asr_suite() -> Suite:
         return Suite("ASR WER", "pending", "no clips/transcripts yet (Lane 1)", {})
     score = corpus_wer((r["ref"], r["hyp"]) for r in rows)
     return Suite(
-        "ASR WER", "ok", f"corpus WER = {score:.3f} over {len(rows)} utts",
+        "ASR WER",
+        "ok",
+        f"corpus WER = {score:.3f} over {len(rows)} utts",
         {"wer": round(score, 4), "n": len(rows)},
     )
 
@@ -64,7 +66,9 @@ def _grounding_suite() -> Suite:
         return Suite("RAG groundedness", "pending", "no answers/sources yet (Lane 2)", {})
     score = mean_groundedness(rows)
     return Suite(
-        "RAG groundedness", "ok", f"mean groundedness = {score:.3f} over {len(rows)} answers",
+        "RAG groundedness",
+        "ok",
+        f"mean groundedness = {score:.3f} over {len(rows)} answers",
         {"groundedness": round(score, 4), "n": len(rows)},
     )
 
@@ -76,7 +80,9 @@ def _routing_suite() -> Suite:
     correct = sum(1 for r in rows if r["pred"] == r["gold"])
     acc = correct / len(rows)
     return Suite(
-        "Intent routing", "ok", f"accuracy = {acc:.3f} ({correct}/{len(rows)})",
+        "Intent routing",
+        "ok",
+        f"accuracy = {acc:.3f} ({correct}/{len(rows)})",
         {"accuracy": round(acc, 4), "n": len(rows)},
     )
 
@@ -84,7 +90,9 @@ def _routing_suite() -> Suite:
 def _latency_suite() -> Suite:
     bench = load_bench_json(BENCH_JSON)
     if not bench:
-        return Suite("Serving latency", "pending", "no baseline.json yet (Lane 3 / capture-baseline)", {})
+        return Suite(
+            "Serving latency", "pending", "no baseline.json yet (Lane 3 / capture-baseline)", {}
+        )
     ttft = bench.get("ttft_ms", {})
     total = bench.get("total_latency_ms", {})
     tps = bench.get("tokens_per_sec", {})
@@ -93,7 +101,12 @@ def _latency_suite() -> Suite:
         f"total p50/p95 = {total.get('p50')}/{total.get('p95')} ms · "
         f"tok/s(agg) = {tps.get('aggregate')}  [label={bench.get('label')}]"
     )
-    return Suite("Serving latency", "ok", summary, {"ttft_ms": ttft, "total_latency_ms": total, "tokens_per_sec": tps})
+    return Suite(
+        "Serving latency",
+        "ok",
+        summary,
+        {"ttft_ms": ttft, "total_latency_ms": total, "tokens_per_sec": tps},
+    )
 
 
 class Harness:
@@ -101,7 +114,10 @@ class Harness:
         suites = [_asr_suite(), _grounding_suite(), _routing_suite(), _latency_suite()]
         report = {
             "generated": datetime.now(timezone.utc).isoformat(),
-            "suites": {s.name: {"status": s.status, "summary": s.summary, "detail": s.detail} for s in suites},
+            "suites": {
+                s.name: {"status": s.status, "summary": s.summary, "detail": s.detail}
+                for s in suites
+            },
         }
         self._write_markdown(suites, report["generated"])
         return report

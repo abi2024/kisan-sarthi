@@ -91,7 +91,13 @@ def test_build_vllm_cmd_omits_model_flags_when_unset():
 
 def test_build_vllm_cmd_appends_extra_args():
     cmd = build_vllm_cmd(
-        {"model": "m", "host": "h", "port": 1, "dtype": "auto", "extra_args": ["--async-scheduling"]}
+        {
+            "model": "m",
+            "host": "h",
+            "port": 1,
+            "dtype": "auto",
+            "extra_args": ["--async-scheduling"],
+        }
     )
     assert cmd[-1] == "--async-scheduling"
 

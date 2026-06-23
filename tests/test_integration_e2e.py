@@ -19,7 +19,9 @@ pytestmark = pytest.mark.integration
 
 
 def _asgi_client() -> httpx.AsyncClient:
-    return httpx.AsyncClient(transport=httpx.ASGITransport(app=mock_llm_app), base_url="http://mock")
+    return httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=mock_llm_app), base_url="http://mock"
+    )
 
 
 def _mock_llm_agent() -> AgentFn:
@@ -58,7 +60,9 @@ async def test_client_streams_text_against_mock_llm_over_asgi():
 
 async def test_full_turn_shape_completes_with_mocks():
     """mock ASR -> agent(LLM client -> mock LLM) -> mock TTS, sharing one TurnContext."""
-    session = Session(MockASR(chunk_delay_s=0.0), MockTTS(chunk_delay_s=0.0), agent=_mock_llm_agent())
+    session = Session(
+        MockASR(chunk_delay_s=0.0), MockTTS(chunk_delay_s=0.0), agent=_mock_llm_agent()
+    )
     result = await session.run_turn()
     assert result.transcript, "ASR produced no final transcript"
     assert result.tts_chunks >= 1
@@ -69,7 +73,9 @@ async def test_full_turn_shape_completes_with_mocks():
 
 async def test_barge_in_cancels_the_turn():
     """Setting ctx.cancel before generation stops the turn with no audio."""
-    session = Session(MockASR(chunk_delay_s=0.0), MockTTS(chunk_delay_s=0.0), agent=_mock_llm_agent())
+    session = Session(
+        MockASR(chunk_delay_s=0.0), MockTTS(chunk_delay_s=0.0), agent=_mock_llm_agent()
+    )
     ctx = session.new_turn_ctx()
     ctx.cancel.set()
     result = await session.run_turn(ctx)
@@ -78,7 +84,9 @@ async def test_barge_in_cancels_the_turn():
 
 
 async def test_multi_turn_session_gives_distinct_turn_ids():
-    session = Session(MockASR(chunk_delay_s=0.0), MockTTS(chunk_delay_s=0.0), agent=_mock_llm_agent())
+    session = Session(
+        MockASR(chunk_delay_s=0.0), MockTTS(chunk_delay_s=0.0), agent=_mock_llm_agent()
+    )
     results = await session.converse(n_turns=2)
     assert len(results) == 2
     assert results[0].turn_id != results[1].turn_id

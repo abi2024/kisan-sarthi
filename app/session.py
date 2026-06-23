@@ -132,4 +132,4 @@ class Session:
 
     async def converse(self, n_turns: int = 1) -> list[TurnResult]:
         """Run `n_turns` sequential turns, each with its own fresh TurnContext."""
-        return [await self.run_turn() for _ in range(n_turns)]  
+        return [await self.run_turn() for _ in range(n_turns)]

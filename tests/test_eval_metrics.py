@@ -25,9 +25,13 @@ def test_corpus_wer_aggregates_by_total_words():
 
 
 def test_groundedness_supported_vs_unsupported():
-    supported = groundedness("Claims report within 72 hours.", ["report crop loss within 72 hours via bank"])
+    supported = groundedness(
+        "Claims report within 72 hours.", ["report crop loss within 72 hours via bank"]
+    )
     assert supported == 1.0
-    unsupported = groundedness("You will win the lottery tomorrow.", ["crop loss reporting window is 72 hours"])
+    unsupported = groundedness(
+        "You will win the lottery tomorrow.", ["crop loss reporting window is 72 hours"]
+    )
     assert unsupported == 0.0
 
 

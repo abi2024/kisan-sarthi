@@ -1,6 +1,6 @@
 # Kisan Sarthi — Evaluation Report
 
-_Generated 2026-06-23T20:11:45.882315+00:00_
+_Generated 2026-06-23T20:12:50.286886+00:00_
 
 Single source of truth for the numbers in the pitch. PENDING suites fill in as each lane delivers real held-out data.
 
