@@ -64,14 +64,19 @@ async def stream_completion(
     reasoning: bool = False,
     cancel: asyncio.Event | None = None,
 ) -> AsyncIterator[str]:
-    """Stream assistant text deltas for `messages`. Stops if `cancel` is set."""
+    """Stream assistant text deltas for `messages`. Stops if `cancel` is set.
+
+    `reasoning` toggles the model's reasoning trace. Nemotron-3-Nano controls this via
+    `chat_template_kwargs={"enable_thinking": ...}` (reasoning is ON by default); the voice
+    path wants it OFF for latency. The mock ignores the field, so this is safe everywhere.
+    """
     client = client or make_client(origin)
     stream = await client.chat.completions.create(
         model=model or DEFAULT_MODEL,
         messages=messages,  # type: ignore[arg-type]
         stream=True,
         max_tokens=max_tokens,
-        extra_body={"reasoning": reasoning},
+        extra_body={"chat_template_kwargs": {"enable_thinking": reasoning}},
     )
     try:
         async for chunk in stream:

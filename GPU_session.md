@@ -26,6 +26,12 @@ A session is "ready to start" only when every box below is checked:
       (or a URL ready). `eval/data/samples/*` is enough to run the harness.
 - [ ] **CPU work merged.** Session manager + eval harness are in (done). On the box you only add
       real numbers, not new code.
+- [ ] **Reasoning-parser plugin URL ready.** Nemotron-3-Nano needs `nano_v3_reasoning_parser.py`
+      fetched into the repo root before `make serve` (the exact `wget` is in Phase 1). Have the URL
+      ready, or plan to comment `reasoning_parser_plugin` out of `serving.yaml` for the baseline.
+- [ ] **Reasoning-parser plugin URL ready.** Nemotron-3-Nano needs `nano_v3_reasoning_parser.py`
+      fetched into the repo root before `make serve` (the exact `wget` is in Phase 1). Have the URL
+      ready, or plan to comment `reasoning_parser_plugin` out of `serving.yaml` for the baseline.
 - [ ] **Blueprint README skimmed.** Read the NVIDIA nemotron-voice-agent README *now* so the NIM
       bring-up isn't a first-read on the meter. (See BRINGUP.md links.)
 
@@ -47,6 +53,16 @@ pulling the model weights / NIM containers in another shell. Overlap the downloa
 ## Phase 1 · C2 — box ready (~5 min once downloads finish)
 ```bash
 make box-check                               # nvidia-smi + env + vllm importable
+# Nemotron-3-Nano needs its reasoning-parser plugin in the working dir (vLLM resolves it
+# from CWD). Fetch it into the repo root before serving:
+wget https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16/resolve/main/nano_v3_reasoning_parser.py
+#   (or comment out `reasoning_parser_plugin` in serving.yaml — the latency baseline doesn't
+#    need reasoning-trace separation. `make serve` warns if the file is missing.)
+# Nemotron-3-Nano needs its reasoning-parser plugin in the working dir (vLLM resolves it
+# from CWD). Fetch it into the repo root before serving:
+wget https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16/resolve/main/nano_v3_reasoning_parser.py
+#   (or comment out `reasoning_parser_plugin` in serving.yaml — the latency baseline doesn't
+#    need reasoning-trace separation. `make serve` warns if the file is missing.)
 make serve &                                 # vLLM serves $KISAN_MODEL_ID on :8000
 #   (first run downloads/loads weights — this is the big wait; let it; do Phase 2 prep meanwhile)
 make check-serving                           # GET /health 200 + non-empty completion  -> C2 PASS

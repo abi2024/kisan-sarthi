@@ -123,7 +123,9 @@ def summarize(
 # --------------------------------------------------------------------------- #
 
 
-async def run_one(client, model: str, prompt: str, max_tokens: int) -> RequestResult:
+async def run_one(
+    client, model: str, prompt: str, max_tokens: int, *, reasoning: bool = False
+) -> RequestResult:
     messages = [{"role": "user", "content": prompt}]
     t0 = time.perf_counter()
     ttft_ms: float | None = None
@@ -135,7 +137,9 @@ async def run_one(client, model: str, prompt: str, max_tokens: int) -> RequestRe
             messages=messages,
             stream=True,
             max_tokens=max_tokens,
-            extra_body={"reasoning": False},
+            # Nemotron toggles reasoning via chat_template_kwargs.enable_thinking (ON by
+            # default). The voice baseline runs reasoning OFF — that's the product path.
+            extra_body={"chat_template_kwargs": {"enable_thinking": reasoning}},
             stream_options={"include_usage": True},
         )
         async for chunk in stream:
@@ -165,6 +169,7 @@ async def run_bench(
     model: str,
     max_tokens: int,
     origin: str,
+    reasoning: bool = False,
     http_client=None,
 ) -> tuple[list[RequestResult], float, dict | None]:
     client = make_client(origin, http_client=http_client)
@@ -172,7 +177,7 @@ async def run_bench(
 
     async def worker(p: str) -> RequestResult:
         async with sem:
-            return await run_one(client, model, p, max_tokens)
+            return await run_one(client, model, p, max_tokens, reasoning=reasoning)
 
     with GpuSampler() as gpu:
         t0 = time.perf_counter()
@@ -282,6 +287,11 @@ def main() -> None:
     parser.add_argument(
         "--out", default=None, help="output JSON path (default eval/results/<label>.json)"
     )
+    parser.add_argument(
+        "--reasoning",
+        action="store_true",
+        help="enable the model's reasoning trace (default OFF = the voice-product baseline)",
+    )
     args = parser.parse_args()
 
     label = args.dtype or args.label
@@ -307,6 +317,7 @@ def main() -> None:
             model=model,
             max_tokens=args.max_tokens,
             origin=origin,
+            reasoning=args.reasoning,
         )
     )
     summary = summarize(
@@ -318,6 +329,7 @@ def main() -> None:
         wall_time_s=wall,
         gpu=gpu,
     )
+    summary["reasoning"] = args.reasoning  # document whether the trace was on for this run
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
