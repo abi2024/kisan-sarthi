@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# Environments
+.venv/
+.env
+venv/
+
+# uv
+# (uv.lock IS committed for reproducibility)
+
+# Models / weights / large binaries (live on the network volume, not in git)
+models/
+*.engine
+*.safetensors
+*.gguf
+*.npz
+*.bin
+
+# Nsight traces
+*.nsys-rep
+*.qdrep
+eval/results/l3_4_profile/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IMPORTANT: do NOT ignore eval/results/*.json or *.wav — they are committed
+# validation artifacts (the whole before/after story depends on them).

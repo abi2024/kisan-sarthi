@@ -1,0 +1,56 @@
+[project]
+name = "kisan-sarthi"
+version = "0.1.0"
+description = "Kisan Sarthi AI — a sub-800ms multilingual voice agent for rural India (Team IronClad)"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.29",
+    "openai>=1.30",
+    "httpx>=0.27",
+    "pyyaml>=6.0",
+]
+
+# GPU-only deps live here so a laptop install skips them.
+# On the H100 box:  uv sync --extra gpu
+[project.optional-dependencies]
+gpu = [
+    "vllm>=0.5",
+    "nvidia-modelopt>=0.17",
+]
+
+# Dev tooling (uv installs dependency-groups by default with `uv sync`).
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "ruff>=0.4",
+    "black>=24.0",
+    "pre-commit>=3.7",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["kisan_sarthi", "app", "eval"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+markers = [
+    "contract: contract-conformance tests (Level 2)",
+    "integration: integration-against-mocks tests (Level 3, no GPU)",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.black]
+line-length = 100
+target-version = ["py310"]

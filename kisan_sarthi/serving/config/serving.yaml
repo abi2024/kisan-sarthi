@@ -1,0 +1,19 @@
+# Kisan Sarthi — serving configuration.
+# Model-agnostic: model_id is null here and comes from $KISAN_MODEL_ID (or --model).
+# Precedence at launch: CLI flag > env var > this file > built-in default.
+
+backend: vllm            # vllm (Wk1, fast path) -> trtllm (Wk2, L3.2)
+model_id: null           # set via KISAN_MODEL_ID, e.g. an NVIDIA Nemotron 3 Nano checkpoint
+host: 127.0.0.1
+port: 8000
+
+# --- FP16 baseline knobs (the number every optimization is a delta against) ---
+dtype: auto              # 'auto' picks the checkpoint's native dtype for the baseline
+max_model_len: 4096
+gpu_memory_utilization: 0.90
+max_num_seqs: 16         # tuned in L3.3 (load test at concurrency 1/4/8)
+kv_cache_dtype: auto     # -> fp8 in L3.3 to free KV-cache headroom
+
+# --- Optimization knobs, filled in as milestones land ---
+# quantization: fp8      # L3.2 (TensorRT Model Optimizer)
+# quantization: nvfp4    # L3.3 (4-bit; ~21 GB MoE footprint)
