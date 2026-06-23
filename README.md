@@ -118,17 +118,36 @@ Serving knobs (dtype, max-model-len, KV-cache dtype, FP8/NVFP4) live in
 
 ---
 
-## Lane ownership
+## Lanes & deliverables
 
-| Lane | Area | Owns (top-level package) |
-| ---- | ---- | ------------------------ |
-| **1** | Speech I/O (ASR, TTS, transport, barge-in) | `kisan_sarthi/speech/` |
-| **2** | Agent & data / RAG / tools / guardrails | `kisan_sarthi/agent/`, `kisan_sarthi/data/` |
-| **3** | Serving & optimization | `kisan_sarthi/serving/`, `eval/perf/` |
-| **4** | Integration, demo, eval | `app/`, `eval/`, `demo/` |
+Each lane owns a top-level package and has its own deliverables doc — milestones, key file
+signatures, and the exact validation gate that defines "done". **Open yours before you start.**
 
-`kisan_sarthi/contracts/` is **shared and frozen** — changing a shape there is an all-hands, not
-a quiet edit.
+| Lane | Area | Owns | Deliverables doc |
+| ---- | ---- | ---- | ---------------- |
+| **1** | Speech I/O (ASR, TTS, transport, barge-in) | `kisan_sarthi/speech/` | [speech/README.md](kisan_sarthi/speech/README.md) — L1.1–L1.5 |
+| **2** | Agent & data / RAG / tools / guardrails | `kisan_sarthi/agent/`, `kisan_sarthi/data/` | [agent/README.md](kisan_sarthi/agent/README.md) — L2.1–L2.5 |
+| **3** | Serving & optimization | `kisan_sarthi/serving/`, `eval/perf/` | [serving/README.md](kisan_sarthi/serving/README.md) — L3.1–L3.5 |
+| **4** | Integration, demo, eval | `app/`, `eval/`, `.github/` | [app/README.md](app/README.md) — L4.1–L4.5 |
+
+Rule: own your package, **integrate only at the seams** (the contracts below). Build against the
+mocks and no lane ever waits on another or on the GPU.
+
+## The contracts are frozen — how to change a shape
+
+`kisan_sarthi/contracts/models.py` holds the five seams. Everyone imports from this one file —
+do **not** redefine these shapes locally (`grep` shows zero local copies; keep it that way). A
+field change ripples through every lane's code *and* mocks, so it is a coordinated change, not a
+quiet commit:
+
+1. **Propose** it in the team channel with the reason; get sign-off from the affected lanes (usually all).
+2. **Edit** `contracts/models.py`.
+3. **Update** the example instances + `tests/test_contracts.py` so the JSON round-trip + `turn_id` checks still pass.
+4. **Update the matching mock** — the mock *is* the contract in runnable form.
+5. **Push** → CI green → ping the team so everyone pulls.
+
+Rule of thumb: prefer **additive** changes (a new field with a default) over changing or removing
+existing fields — additive doesn't break anyone.
 
 ---
 
