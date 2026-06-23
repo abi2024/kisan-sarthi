@@ -1,0 +1,5 @@
+{"pred": "credit", "gold": "credit"}
+{"pred": "scheme", "gold": "scheme"}
+{"pred": "advisory", "gold": "advisory"}
+{"pred": "scheme", "gold": "credit"}
+{"pred": "smalltalk", "gold": "smalltalk"}
