@@ -1,19 +1,32 @@
 # Kisan Sarthi — serving configuration.
-# Model-agnostic: model_id is null here and comes from $KISAN_MODEL_ID (or --model).
 # Precedence at launch: CLI flag > env var > this file > built-in default.
+# The model-family flags below are set for the CHOSEN model (Nemotron-3-Nano). Swapping
+# models = edit this file (and export KISAN_MODEL_ID); the launcher code stays model-agnostic.
 
 backend: vllm            # vllm (Wk1, fast path) -> trtllm (Wk2, L3.2)
-model_id: null           # set via KISAN_MODEL_ID, e.g. an NVIDIA Nemotron 3 Nano checkpoint
+
+# Default model = Nemotron-3-Nano BF16 (the un-quantized baseline; FP8/NVFP4 come in L3.2/L3.3).
+# On the box, ALSO `export KISAN_MODEL_ID=nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16` so the
+# serving client (Lane 2) sends the same model name the server is serving.
+model_id: nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16
 host: 127.0.0.1
 port: 8000
 
-# --- FP16 baseline knobs (the number every optimization is a delta against) ---
-dtype: auto              # 'auto' picks the checkpoint's native dtype for the baseline
-max_model_len: 4096
+# --- BF16 baseline knobs (the number every optimization is a delta against) ---
+dtype: auto              # 'auto' resolves to the checkpoint's native bf16
+max_model_len: 4096      # modest for the voice turn; model supports up to 1M
 gpu_memory_utilization: 0.90
-max_num_seqs: 16         # tuned in L3.3 (load test at concurrency 1/4/8)
+max_num_seqs: 8          # NVIDIA's reference value for this model; tuned in L3.3
 kv_cache_dtype: auto     # -> fp8 in L3.3 to free KV-cache headroom
 
+# --- Model-family flags (required for Nemotron-3-Nano's nemotron_h hybrid arch) ---
+trust_remote_code: true                          # REQUIRED: the model won't load without it
+enable_auto_tool_choice: true                    # for Lane 2 tool calling
+tool_call_parser: qwen3_coder
+reasoning_parser: nano_v3                         # separates reasoning trace from final answer
+reasoning_parser_plugin: nano_v3_reasoning_parser.py  # wget from the model repo before serving
+
 # --- Optimization knobs, filled in as milestones land ---
-# quantization: fp8      # L3.2 (TensorRT Model Optimizer)
-# quantization: nvfp4    # L3.3 (4-bit; ~21 GB MoE footprint)
+# quantization: fp8      # L3.2 (model id -> ...-A3B-FP8; also export VLLM_USE_FLASHINFER_MOE_FP8=1)
+# quantization: nvfp4    # L3.3 (model id -> ...-A3B-NVFP4; ~20 GB footprint)
+# extra_args: ["--async-scheduling"]   # escape hatch for raw vllm flags

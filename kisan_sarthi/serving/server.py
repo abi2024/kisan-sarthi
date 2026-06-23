@@ -13,7 +13,7 @@ Importing this module is side-effect free and GPU-free. The launch happens only 
 with a clear message (install the GPU extra on the box: `uv sync --extra gpu`).
 
 Run on the box:
-    KISAN_MODEL_ID=nvidia/Nemotron-... python -m kisan_sarthi.serving.server
+    KISAN_MODEL_ID=nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16 python -m kisan_sarthi.serving.server
 """
 
 from __future__ import annotations
@@ -61,6 +61,17 @@ def resolve_settings(cli: argparse.Namespace, cfg: dict[str, Any]) -> dict[str, 
         "max_num_seqs": cfg.get("max_num_seqs"),
         "kv_cache_dtype": cfg.get("kv_cache_dtype"),
         "quantization": cfg.get("quantization"),
+        # Model-family flags (set in serving.yaml for the chosen model; omitted when unset
+        # so the launcher stays model-agnostic). Required for custom-arch models such as
+        # Nemotron-3-Nano (hybrid Mamba/MoE, nemotron_h) which won't load without
+        # --trust-remote-code.
+        "trust_remote_code": bool(cfg.get("trust_remote_code", False)),
+        "enable_auto_tool_choice": bool(cfg.get("enable_auto_tool_choice", False)),
+        "tool_call_parser": cfg.get("tool_call_parser"),
+        "reasoning_parser": cfg.get("reasoning_parser"),
+        "reasoning_parser_plugin": cfg.get("reasoning_parser_plugin"),
+        # Escape hatch: any extra raw vllm args (list of strings) appended verbatim.
+        "extra_args": cfg.get("extra_args") or [],
     }
 
 
@@ -91,6 +102,21 @@ def build_vllm_cmd(s: dict[str, Any]) -> list[str]:
         cmd += ["--kv-cache-dtype", str(s["kv_cache_dtype"])]
     if s.get("quantization"):  # fp8 / nvfp4 etc. — set as L3.2 / L3.3 land
         cmd += ["--quantization", str(s["quantization"])]
+    # Model-family flags (omitted unless set in config). Nemotron-3-Nano needs
+    # --trust-remote-code to load at all; the tool/reasoning parsers shape how vLLM
+    # exposes tool calls and separates reasoning traces from the final answer.
+    if s.get("trust_remote_code"):
+        cmd += ["--trust-remote-code"]
+    if s.get("enable_auto_tool_choice"):
+        cmd += ["--enable-auto-tool-choice"]
+    if s.get("tool_call_parser"):
+        cmd += ["--tool-call-parser", str(s["tool_call_parser"])]
+    if s.get("reasoning_parser_plugin"):
+        cmd += ["--reasoning-parser-plugin", str(s["reasoning_parser_plugin"])]
+    if s.get("reasoning_parser"):
+        cmd += ["--reasoning-parser", str(s["reasoning_parser"])]
+    for arg in s.get("extra_args") or []:
+        cmd.append(str(arg))
     return cmd
 
 
@@ -125,6 +151,19 @@ def main() -> None:
     if args.print_cmd:
         print(" ".join(cmd))
         return
+
+    # The reasoning-parser plugin is a file fetched from the model repo, e.g.:
+    #   wget https://huggingface.co/<model>/resolve/main/nano_v3_reasoning_parser.py
+    # vLLM resolves it relative to the working dir; warn early rather than fail mid-launch.
+    plugin = s.get("reasoning_parser_plugin")
+    if plugin and not Path(plugin).exists():
+        print(
+            f"[serving] WARNING: reasoning-parser-plugin '{plugin}' not found in {os.getcwd()}.\n"
+            f"          Fetch it first, e.g.:\n"
+            f"            wget https://huggingface.co/{s['model']}/resolve/main/{plugin}\n"
+            f"          (or unset reasoning_parser_plugin in serving.yaml for the baseline run).",
+            flush=True,
+        )
 
     if shutil.which("vllm") is None:
         sys.exit(
